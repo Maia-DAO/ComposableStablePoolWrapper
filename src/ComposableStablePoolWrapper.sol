@@ -51,11 +51,6 @@ contract ComposableStablePoolWrapper is ERC4626 {
     }
 
     /// @inheritdoc IERC4626
-    function previewDeposit(uint256 assets) public view override returns (uint256) {
-        return convertToShares(assets);
-    }
-
-    /// @inheritdoc IERC4626
     function previewMint(uint256 shares) public view override returns (uint256) {
         // Divide by rate to get assets, rounding up
         return shares.divWadUp(IComposableStablePool(address(asset)).getRate());
@@ -65,10 +60,5 @@ contract ComposableStablePoolWrapper is ERC4626 {
     function previewWithdraw(uint256 assets) public view override returns (uint256) {
         // Multiply by rate to get shares, rounding up
         return assets.mulWadUp(IComposableStablePool(address(asset)).getRate());
-    }
-
-    /// @inheritdoc IERC4626
-    function previewRedeem(uint256 shares) public view override returns (uint256) {
-        return convertToAssets(shares);
     }
 }
