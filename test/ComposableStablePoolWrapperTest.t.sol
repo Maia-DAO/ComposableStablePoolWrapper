@@ -49,6 +49,10 @@ contract ComposableStablePoolWrapperTest_3Crypto is Test {
         stablePoolWrapper = new ComposableStablePoolWrapper(1, bptToken, "Mock Token Vault", "vwTKN");
     }
 
+    function test_fork_convertToShares() public {
+        assertEq(bpt.getRate(), stablePoolWrapper.convertToShares(1e18));
+    }
+
     function test_fork_exitPool() public {
         vm.startPrank(whale);
         uint256 balance = bptToken.balanceOf(whale) / 10;
