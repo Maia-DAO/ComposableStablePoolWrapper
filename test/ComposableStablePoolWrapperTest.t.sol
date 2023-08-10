@@ -6,36 +6,37 @@ import {Test} from "forge-std/Test.sol";
 
 import {MockERC20} from "solmate/test/utils/mocks/MockERC20.sol";
 
-import {IComposableStablePool, ComposableStablePoolWrapper, ERC20} from "src/ComposableStablePoolWrapper.sol";
+import {ComposableStablePoolWrapper, ERC20} from "src/ComposableStablePoolWrapper.sol";
 
-import {ExitKind, IVault} from "./interfaces/IVault.sol";
+import {IComposableStablePoolFactory} from "./interfaces/IComposableStablePoolFactory.sol";
+import {IComposableStablePool} from "./interfaces/IComposableStablePool.sol";
 
+import "./interfaces/IVault.sol";
 
-contract ComposableStablePoolWrapperTest_3Crypto is Test {
+contract ComposableStablePoolWrapperTest is Test {
     // Balancer: Vault
     address vaultAddress = 0xBA12222222228d8Ba445958a75a0704d566BF2C8;
     IVault vault = IVault(vaultAddress);
 
-    // Balancer auraBAL Stable Pool (B-auraBAL-STABLE)
-    bytes32 poolId = 0x79c58f70905f734641735bc61e45c19dd9ad60bc0000000000000000000004e7;
-    address bptAddress = 0x79c58f70905F734641735BC61e45c19dD9Ad60bC;
-    ERC20 bptToken = ERC20(bptAddress);
-    IComposableStablePool bpt = IComposableStablePool(bptAddress);
+    address balancerQueriesAddress = 0xE39B5e3B6D74016b2F6A9673D7d7493B6DF549d5;
+    IBalancerQueries balancerQueries = IBalancerQueries(balancerQueriesAddress);
 
-    // DAI Token
-    address token0Address = 0x6B175474E89094C44Da98b954EedeAC495271d0F;
-    MockERC20 token0 = MockERC20(token0Address);
+    // ComposableStablePoolFactory
+    address factoryAddress = 0xfADa0f4547AB2de89D1304A668C39B3E09Aa7c76;
+    IComposableStablePoolFactory factory = IComposableStablePoolFactory(factoryAddress);
 
-    // USDC Token
-    address token1Address = 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48;
-    MockERC20 token1 = MockERC20(token1Address);
+    bytes32 poolId;
+    address bptAddress;
+    ERC20 bptToken;
+    IComposableStablePool bpt;
 
-    // USDT Token
-    address token2Address = 0xdAC17F958D2ee523a2206206994597C13D831ec7;
-    MockERC20 token2 = MockERC20(token1Address);
+    // Mock Token 1
+    address token0Address;
+    MockERC20 token0;
 
-    // gauge address, has a lot of BPT
-    address whale = 0xaDAcbA4Cae9471C26D613F7A94014549a647783C;
+    // Mock Token 2
+    address token1Address;
+    MockERC20 token1;
 
     uint256 mainnetFork;
     string MAINNET_RPC_URL = vm.envString("MAINNET_RPC_URL");
@@ -45,114 +46,99 @@ contract ComposableStablePoolWrapperTest_3Crypto is Test {
     function setUp() public {
         mainnetFork = vm.createFork(MAINNET_RPC_URL);
         vm.selectFork(mainnetFork);
+    }
 
-        stablePoolWrapper = new ComposableStablePoolWrapper(1, bptToken, "Mock Token Vault", "vwTKN");
+    function sort_array_addresses(address[] memory tokens) public pure returns (address[] memory) {
+        if (tokens.length == 0) {
+            return tokens;
+        }
+
+        for (uint256 i = 0; i < tokens.length - 1; i++) {
+            for (uint256 j = 0; j < tokens.length - i - 1; j++) {
+                if (tokens[j] > tokens[j + 1]) {
+                    address temp = tokens[j];
+                    tokens[j] = tokens[j + 1];
+                    tokens[j + 1] = temp;
+                }
+            }
+        }
+
+        return tokens;
+    }
+
+    function test_create_2TokenBPT() public {
+        address[] memory tokens = new address[](2);
+        tokens[0] = address(new MockERC20("Mock Token 0", "TKN0", 18));
+        tokens[1] = address(new MockERC20("Mock Token 1", "TKN1", 18));
+
+        tokens = sort_array_addresses(tokens);
+
+        token0Address = tokens[0];
+        token0 = MockERC20(token0Address);
+        token1Address = tokens[1];
+        token1 = MockERC20(token1Address);
+
+        address[] memory rateProviders = new address[](2);
+        uint256[] memory tokenRateCacheDurations = new uint256[](2);
+        bool[] memory exemptFromYieldProtocolFeeFlags = new bool[](2);
+
+        bptAddress = factory.create(
+            "Mock Token Vault",
+            "vwTKN",
+            tokens,
+            5_000,
+            rateProviders,
+            tokenRateCacheDurations,
+            exemptFromYieldProtocolFeeFlags,
+            1e12,
+            address(this),
+            keccak256(abi.encodePacked(block.timestamp))
+        );
+        bptToken = ERC20(bptAddress);
+        bpt = IComposableStablePool(bptAddress);
+        poolId = bpt.getPoolId();
+
+        stablePoolWrapper = new ComposableStablePoolWrapper(bptToken, "Mock Token Vault", "vwTKN");
     }
 
     function test_fork_convertToShares() public {
+        test_fork_joinPool();
         assertEq(bpt.getRate(), stablePoolWrapper.convertToShares(1e18));
     }
 
-    function test_fork_exitPool() public {
-        vm.startPrank(whale);
-        uint256 balance = bptToken.balanceOf(whale) / 10;
-        uint256 preview = stablePoolWrapper.convertToShares(balance);
+    function test_fork_joinPool() public {
+        test_create_2TokenBPT();
 
-        bptToken.approve(vaultAddress, balance);
-
-        address[] memory assets = new address[](4);
-        assets[0] = token0Address;
-        assets[1] = bptAddress;
-        assets[2] = token1Address;
-        assets[3] = token2Address;
-
-        uint256[] memory minAmountsOut = new uint256[](4);
-
-        vault.exitPool(
-            poolId,
-            whale,
-            address(this),
-            IVault.ExitPoolRequest({
-                assets: assets,
-                minAmountsOut: minAmountsOut,
-                userData: abi.encode([ExitKind.EXACT_BPT_IN_FOR_ONE_TOKEN_OUT, balance, 0]),
-                toInternalBalance: false
-            })
-        );
-
-        uint256 token0Balance = token0.balanceOf(address(this));
-        uint256 token1Balance = token1.balanceOf(address(this));
-        uint256 token2Balance = token2.balanceOf(address(this));
-        uint256 tokenBalance = token0Balance + token1Balance + token2Balance;
-
-        assertApproxEqAbs(tokenBalance, preview, balance / 1e4);
-    }
-}
-
-contract ComposableStablePoolWrapperTest_AuraBal is Test {
-    // Balancer: Vault
-    address vaultAddress = 0xBA12222222228d8Ba445958a75a0704d566BF2C8;
-    IVault vault = IVault(vaultAddress);
-
-    // Balancer auraBAL Stable Pool (B-auraBAL-STABLE)
-    bytes32 poolId = 0x3dd0843a028c86e0b760b1a76929d1c5ef93a2dd000200000000000000000249;
-    address bptAddress = 0x3dd0843A028C86e0b760b1A76929d1C5Ef93a2dd;
-    ERC20 bptToken = ERC20(bptAddress);
-    IComposableStablePool bpt = IComposableStablePool(bptAddress);
-
-    // Balancer: B-80BAL-20WETH Token
-    address token0Address = 0x5c6Ee304399DBdB9C8Ef030aB642B10820DB8F56;
-    MockERC20 token0 = MockERC20(token0Address);
-    // Aura: auraBAL Token
-    address token1Address = 0x616e8BfA43F920657B3497DBf40D6b1A02D4608d;
-    MockERC20 token1 = MockERC20(token1Address);
-    // auraBal minter
-    address token1Minter = 0xeAd792B55340Aa20181A80d6a16db6A0ECd1b827;
-
-    // gauge address, has a lot of BPT
-    address whale = 0x0312AA8D0BA4a1969Fddb382235870bF55f7f242;
-
-    uint256 mainnetFork;
-    string MAINNET_RPC_URL = vm.envString("MAINNET_RPC_URL");
-
-    ComposableStablePoolWrapper stablePoolWrapper;
-
-    function setUp() public {
-        mainnetFork = vm.createFork(MAINNET_RPC_URL);
-        vm.selectFork(mainnetFork);
-
-        stablePoolWrapper = new ComposableStablePoolWrapper(1, bptToken, "Mock Token Vault", "vwTKN");
-    }
-
-    function test_fork_exitPool() public {
-        vm.startPrank(whale);
-        uint256 balance = bptToken.balanceOf(whale);
-        uint256 preview = stablePoolWrapper.convertToShares(balance);
-
-        bptToken.approve(vaultAddress, balance);
-
-        address[] memory assets = new address[](2);
-        assets[0] = token0Address;
-        assets[1] = token1Address;
-
-        uint256[] memory minAmountsOut = new uint256[](2);
-
-        vault.exitPool(
-            poolId,
-            whale,
-            address(this),
-            IVault.ExitPoolRequest({
-                assets: assets,
-                minAmountsOut: minAmountsOut,
-                userData: abi.encode([ExitKind.EXACT_BPT_IN_FOR_TOKENS_OUT, balance]),
-                toInternalBalance: false
-            })
-        );
-
-        uint256 token0Balance = token0.balanceOf(address(this));
-        uint256 token1Balance = token1.balanceOf(address(this));
+        uint256 token0Balance = 1_000_000 ether;
+        uint256 token1Balance = 1_000_000 ether;
+        token0.mint(address(this), token0Balance);
+        token1.mint(address(this), token1Balance);
         uint256 tokenBalance = token0Balance + token1Balance;
 
-        assertApproxEqAbs(tokenBalance, preview, balance / 1e3);
+        token0.approve(address(vault), token0Balance);
+        token1.approve(address(vault), token1Balance);
+
+        uint256[] memory maxAmountsIn = new uint256[](3);
+        maxAmountsIn[0] = token0Balance;
+        maxAmountsIn[1] = token0Balance;
+        maxAmountsIn[2] = token1Balance;
+
+        (address[] memory assets,,) = vault.getPoolTokens(poolId);
+
+        vault.joinPool(
+            poolId,
+            address(this),
+            address(this),
+            JoinPoolRequest({
+                assets: assets,
+                maxAmountsIn: maxAmountsIn,
+                userData: abi.encode(JoinPoolUserData({kind: JoinKind.INIT, amountsIn: maxAmountsIn})),
+                fromInternalBalance: false
+            })
+        );
+
+        uint256 balance = bptToken.balanceOf(address(this));
+
+        assertEq(tokenBalance, stablePoolWrapper.convertToShares(balance));
     }
 }

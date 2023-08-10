@@ -18,8 +18,5 @@ interface IComposableStablePool {
      */
     function getRate() external view returns (uint256);
 
-    /**
-     * @dev Returns the address of the Vault.
-     */
-    function getVault() external view returns (address);
+    function getPoolId() external view returns (bytes32);
 }
