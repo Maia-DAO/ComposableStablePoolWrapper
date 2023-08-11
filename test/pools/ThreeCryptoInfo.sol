@@ -1,13 +1,15 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity ^0.8.0;
 
-import {ERC20, IComposableStablePool, IPoolInfo, MockERC20} from "../interfaces/IPoolInfo.sol";
+import "../interfaces/IPoolInfo.sol";
 
 contract ThreeCryptoInfo is IPoolInfo {
     constructor() {
         tokens.push(token0);
         tokens.push(token1);
         tokens.push(token2);
+
+        stablePoolWrapper = new ComposableStablePoolWrapper(bptToken, "Mock Token Vault", "vwTKN");
     }
 
     function getTokens() public view override returns (MockERC20[] memory) {
@@ -15,6 +17,8 @@ contract ThreeCryptoInfo is IPoolInfo {
     }
 
     MockERC20[] public override tokens;
+
+    ComposableStablePoolWrapper public immutable override stablePoolWrapper;
 
     // Balancer auraBAL Stable Pool (B-auraBAL-STABLE)
     bytes32 public constant override poolId = 0x79c58f70905f734641735bc61e45c19dd9ad60bc0000000000000000000004e7;
@@ -40,5 +44,4 @@ contract ThreeCryptoInfo is IPoolInfo {
 
     // gauge address, has a lot of BPT
     address public constant override whale = 0x5612876e6F6cA370d93873FE28c874e89E741fB9;
-
 }
