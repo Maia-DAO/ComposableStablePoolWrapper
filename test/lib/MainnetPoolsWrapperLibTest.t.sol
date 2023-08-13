@@ -53,13 +53,30 @@ abstract contract MainnetPoolsWrapperLibTest is Test {
         return abi.encode(preview);
     }
 
+    function _prepAssertInit(IPoolInfo info) internal returns (bytes memory) {
+        MockERC20[] memory tokens = info.getTokens();
+
+        uint256 amount = 1_000_000 ether;
+        for (uint256 i = 0; i < tokens.length; i++) {
+            tokens[i].mint(address(this), amount);
+            tokens[i].approve(address(vault), amount);
+        }
+
+        uint256 preview = amount * tokens.length;
+
+        return abi.encode(preview);
+    }
+
     /*///////////////////////////////////////////////////////////////
                                 ASSERTS
     ///////////////////////////////////////////////////////////////*/
 
-    function _assertExit(IPoolInfo, bytes memory prepAssertData, bytes memory actionData) internal {
+    function _assertTwoBalances(IPoolInfo, bytes memory prepAssertData, bytes memory actionData) internal {
         uint256 preview = abi.decode(prepAssertData, (uint256));
         uint256 tokenBalance = abi.decode(actionData, (uint256));
+
+        console2.log("preview", preview);
+        console2.log("tokenBalance", tokenBalance);
 
         assertApproxEqAbs(tokenBalance, preview, preview / 1e3);
     }
@@ -86,6 +103,30 @@ abstract contract MainnetPoolsWrapperLibTest is Test {
                 minAmountsOut: minAmountsOut,
                 userData: abi.encode([ExitKind.EXACT_BPT_IN_FOR_TOKENS_OUT, balance]),
                 toInternalBalance: false
+            })
+        );
+    }
+
+    function _prepInit(IPoolInfo info, bytes4 selector) internal view returns (bytes memory) {
+        bytes32 poolId = info.poolId();
+
+        (address[] memory assets,,) = vault.getPoolTokens(poolId);
+        uint256[] memory maxAmountsIn = new uint256[](assets.length);
+
+        for (uint256 i = 0; i < assets.length; i++) {
+            maxAmountsIn[i] = MockERC20(assets[i]).balanceOf(address(this));
+        }
+
+        return abi.encodeWithSelector(
+            selector,
+            poolId,
+            address(this),
+            address(this),
+            JoinPoolRequest({
+                assets: assets,
+                maxAmountsIn: maxAmountsIn,
+                userData: abi.encode(JoinPoolUserData({kind: JoinKind.INIT, amountsIn: maxAmountsIn})),
+                fromInternalBalance: false
             })
         );
     }
@@ -132,6 +173,18 @@ abstract contract MainnetPoolsWrapperLibTest is Test {
         return abi.encode(tokenBalances);
     }
 
+    function _queryInit(IPoolInfo info) internal returns (bytes memory) {
+        _executeAction(vaultAddress, _prepInit(info, IBalancerQueries.queryJoin.selector));
+
+        return abi.encode(info.bptToken().balanceOf(address(this)));
+    }
+
+    function _initPool(IPoolInfo info) internal returns (bytes memory) {
+        _executeAction(vaultAddress, _prepInit(info, IVault.joinPool.selector));
+
+        return abi.encode(info.bptToken().balanceOf(address(this)));
+    }
+
     function _testSingleAction(
         IPoolInfo info,
         function(IPoolInfo) returns (bytes memory) prepAssertAction,
@@ -150,30 +203,42 @@ abstract contract MainnetPoolsWrapperLibTest is Test {
     //////////////////////////////////////////////////////////////*/
 
     function _testExit_single(IPoolInfo info, function(IPoolInfo) returns (bytes memory) action) internal {
-        _testSingleAction(info, _prepAssertExit, action, _assertExit);
+        _testSingleAction(info, _prepAssertExit, action, _assertTwoBalances);
+    }
+
+    function _testJoin_single(IPoolInfo info, function(IPoolInfo) returns (bytes memory) action) internal {
+        _testSingleAction(info, _prepAssertInit, action, _assertTwoBalances);
     }
 
     /*//////////////////////////////////////////////////////////////
                              TEST POOL
     //////////////////////////////////////////////////////////////*/
 
-    function test_fork_exitPool() public {
+    function test_fork_exitPool() public virtual {
         _testExit_single(poolInfo, _exitPool);
     }
 
-    function test_fork_queryExit() public {
+    function test_fork_queryExit() public virtual {
         _testExit_single(poolInfo, _queryExit);
     }
 
-    function test_fork_convertToShares() public {
+    function test_fork_initPool() public virtual {
+        _testJoin_single(poolInfo, _initPool);
+    }
+
+    function test_fork_queryInit() public virtual {
+        _testJoin_single(poolInfo, _queryInit);
+    }
+
+    function test_fork_convertToShares() public virtual {
         assertEq(poolInfo.bpt().getRate(), poolInfo.stablePoolWrapper().convertToShares(1e18));
     }
 
-    function test_fork_convertToAssets() public {
+    function test_fork_convertToAssets() public virtual {
         assertEq(1e18 * 1e18 / poolInfo.bpt().getRate(), poolInfo.stablePoolWrapper().convertToAssets(1e18));
     }
 
-    function test_fork_previewMint() public {
+    function test_fork_previewMint() public virtual {
         uint256 expected = 1e18 * 1e18 / poolInfo.bpt().getRate();
         assertEq(
             poolInfo.bpt().getRate() % 1e18 == 0 ? expected : expected + 1,
@@ -181,7 +246,7 @@ abstract contract MainnetPoolsWrapperLibTest is Test {
         );
     }
 
-    function test_fork_previewWithdraw() public {
+    function test_fork_previewWithdraw() public virtual {
         assertEq(poolInfo.bpt().getRate(), poolInfo.stablePoolWrapper().previewWithdraw(1e18));
     }
 }

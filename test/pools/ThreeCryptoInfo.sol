@@ -4,18 +4,6 @@ pragma solidity ^0.8.0;
 import "../interfaces/IPoolInfo.sol";
 
 contract ThreeCryptoInfo is IPoolInfo {
-    constructor() {
-        tokens.push(token0);
-        tokens.push(token1);
-        tokens.push(token2);
-
-        stablePoolWrapper = new ComposableStablePoolWrapper(bptToken, "Mock Token Vault", "vwTKN");
-    }
-
-    function getTokens() public view override returns (MockERC20[] memory) {
-        return tokens;
-    }
-
     MockERC20[] public override tokens;
 
     ComposableStablePoolWrapper public immutable override stablePoolWrapper;
@@ -44,4 +32,16 @@ contract ThreeCryptoInfo is IPoolInfo {
 
     // gauge address, has a lot of BPT
     address public constant override whale = 0x5612876e6F6cA370d93873FE28c874e89E741fB9;
+
+    constructor() {
+        tokens.push(token0);
+        tokens.push(token1);
+        tokens.push(token2);
+
+        stablePoolWrapper = new ComposableStablePoolWrapper(bptToken, "Mock Token Vault", "vwTKN");
+    }
+
+    function getTokens() public view override returns (MockERC20[] memory) {
+        return tokens;
+    }
 }

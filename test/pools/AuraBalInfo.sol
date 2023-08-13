@@ -4,17 +4,6 @@ pragma solidity ^0.8.0;
 import "../interfaces/IPoolInfo.sol";
 
 contract AuraBalInfo is IPoolInfo {
-    constructor() {
-        tokens.push(token0);
-        tokens.push(token1);
-
-        stablePoolWrapper = new ComposableStablePoolWrapper(bptToken, "Mock Token Vault", "vwTKN");
-    }
-
-    function getTokens() public view override returns (MockERC20[] memory) {
-        return tokens;
-    }
-
     MockERC20[] public override tokens;
 
     ComposableStablePoolWrapper public immutable override stablePoolWrapper;
@@ -42,4 +31,15 @@ contract AuraBalInfo is IPoolInfo {
 
     // gauge address, has a lot of BPT
     address public constant override whale = 0x0312AA8D0BA4a1969Fddb382235870bF55f7f242;
+
+    constructor() {
+        tokens.push(token0);
+        tokens.push(token1);
+
+        stablePoolWrapper = new ComposableStablePoolWrapper(bptToken, "Mock Token Vault", "vwTKN");
+    }
+
+    function getTokens() public view override returns (MockERC20[] memory) {
+        return tokens;
+    }
 }
