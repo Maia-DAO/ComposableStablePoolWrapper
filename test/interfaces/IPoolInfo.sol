@@ -8,6 +8,29 @@ import {ComposableStablePoolWrapper} from "src/ComposableStablePoolWrapper.sol";
 import {IComposableStablePool} from "../interfaces/IComposableStablePool.sol";
 
 interface IPoolInfo {
+    enum ExitKind {
+        EXACT_BPT_IN_FOR_ONE_TOKEN_OUT,
+        BPT_IN_FOR_EXACT_TOKENS_OUT,
+        EXACT_BPT_IN_FOR_ALL_TOKENS_OUT
+    }
+
+    enum JoinKind {
+        INIT,
+        EXACT_TOKENS_IN_FOR_BPT_OUT,
+        TOKEN_IN_FOR_EXACT_BPT_OUT,
+        ALL_TOKENS_IN_FOR_EXACT_BPT_OUT
+    }
+
+    enum ExitKindPrevious {
+        EXACT_BPT_IN_FOR_ONE_TOKEN_OUT,
+        EXACT_BPT_IN_FOR_ALL_TOKENS_OUT,
+        BPT_IN_FOR_EXACT_TOKENS_OUT
+    }
+
+    function INIT() external pure returns (uint256);
+
+    function EXACT_BPT_IN_FOR_ALL_TOKENS_OUT() external pure returns (uint256);
+
     function getTokens() external view returns (MockERC20[] memory);
 
     function tokens(uint256) external view returns (MockERC20);

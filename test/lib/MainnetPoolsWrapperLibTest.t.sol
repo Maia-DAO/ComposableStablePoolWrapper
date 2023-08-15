@@ -101,7 +101,7 @@ abstract contract MainnetPoolsWrapperLibTest is Test {
             ExitPoolRequest({
                 assets: assets,
                 minAmountsOut: minAmountsOut,
-                userData: abi.encode([ExitKind.EXACT_BPT_IN_FOR_TOKENS_OUT, balance]),
+                userData: abi.encode(ExitPoolUserData(info.EXACT_BPT_IN_FOR_ALL_TOKENS_OUT(), balance)),
                 toInternalBalance: false
             })
         );
@@ -125,7 +125,7 @@ abstract contract MainnetPoolsWrapperLibTest is Test {
             JoinPoolRequest({
                 assets: assets,
                 maxAmountsIn: maxAmountsIn,
-                userData: abi.encode(JoinPoolUserData({kind: JoinKind.INIT, amountsIn: maxAmountsIn})),
+                userData: abi.encode(JoinPoolUserData({kind: info.INIT(), amountsIn: maxAmountsIn})),
                 fromInternalBalance: false
             })
         );
@@ -148,12 +148,12 @@ abstract contract MainnetPoolsWrapperLibTest is Test {
 
         (, uint256[] memory amountsOut) = abi.decode(returnData, (uint256, uint256[]));
 
-        MockERC20[] memory tokens = info.getTokens();
+        (address[] memory assets,,) = vault.getPoolTokens(info.poolId());
 
         uint256 tokenBalances;
 
         for (uint256 i = 0; i < amountsOut.length; i++) {
-            tokenBalances += DecimalConversion.convertTo18(amountsOut[i], tokens[i].decimals());
+            tokenBalances += DecimalConversion.convertTo18(amountsOut[i], MockERC20(assets[i]).decimals());
         }
 
         return abi.encode(tokenBalances);

@@ -67,7 +67,7 @@ abstract contract OnlyInitTest is MainnetPoolsWrapperLibTest {
 
 contract MainnetPoolsWrapperLibTest_New2Token is OnlyInitTest {
     // ComposableStablePoolFactory
-    address factoryAddress = 0xfADa0f4547AB2de89D1304A668C39B3E09Aa7c76;
+    address factoryAddress = 0xDB8d758BCb971e482B2C45f7F8a7740283A1bd3A;
     IComposableStablePoolFactory factory = IComposableStablePoolFactory(factoryAddress);
 
     function _setUpWrapper() internal override returns (IPoolInfo poolInfo) {

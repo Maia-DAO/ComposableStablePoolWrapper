@@ -3,13 +3,9 @@ pragma solidity ^0.8.0;
 
 import {IComposableStablePoolFactory} from "../interfaces/IComposableStablePoolFactory.sol";
 
-import "../interfaces/IPoolInfo.sol";
+import "./BasePoolInfo.sol";
 
-contract New2TokenInfo is IPoolInfo {
-    MockERC20[] public override tokens;
-
-    ComposableStablePoolWrapper public immutable override stablePoolWrapper;
-
+contract New2TokenInfo is BasePoolInfo {
     // Balancer auraBAL Stable Pool (B-auraBAL-STABLE)
     bytes32 public immutable override poolId;
     address public immutable override bptAddress;
@@ -54,7 +50,7 @@ contract New2TokenInfo is IPoolInfo {
 
         address[] memory rateProviders = new address[](2);
         uint256[] memory tokenRateCacheDurations = new uint256[](2);
-        bool[] memory exemptFromYieldProtocolFeeFlags = new bool[](2);
+        bool exemptFromYieldProtocolFeeFlags = false;
 
         bptAddress = factory.create(
             "Mock Token Vault",
@@ -66,17 +62,13 @@ contract New2TokenInfo is IPoolInfo {
             exemptFromYieldProtocolFeeFlags,
             1e12,
             address(this),
-            keccak256(abi.encodePacked(block.timestamp))
+            bytes32(block.timestamp)
         );
         bptToken = ERC20(bptAddress);
         bpt = IComposableStablePool(bptAddress);
         poolId = bpt.getPoolId();
 
         stablePoolWrapper = new ComposableStablePoolWrapper(bptToken, "Mock Token Vault", "vwTKN");
-    }
-
-    function getTokens() public view override returns (MockERC20[] memory) {
-        return tokens;
     }
 
     function sort_array_addresses(MockERC20[] memory _tokens) internal pure returns (MockERC20[] memory) {
