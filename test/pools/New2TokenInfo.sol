@@ -61,8 +61,8 @@ contract New2TokenInfo is BasePoolInfo {
             tokenRateCacheDurations,
             exemptFromYieldProtocolFeeFlags,
             1e12,
-            address(this),
-            bytes32(block.timestamp)
+            msg.sender,
+            bytes32(0)
         );
         bptToken = ERC20(bptAddress);
         bpt = IComposableStablePool(bptAddress);

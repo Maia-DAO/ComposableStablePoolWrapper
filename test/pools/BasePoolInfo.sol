@@ -16,6 +16,10 @@ abstract contract BasePoolInfo is IPoolInfo {
         return uint256(JoinKind.INIT);
     }
 
+    function EXACT_TOKENS_IN_FOR_BPT_OUT() external pure override returns (uint256) {
+        return uint256(JoinKind.EXACT_TOKENS_IN_FOR_BPT_OUT);
+    }
+
     function EXACT_BPT_IN_FOR_ALL_TOKENS_OUT() external pure virtual override returns (uint256) {
         return uint256(ExitKind.EXACT_BPT_IN_FOR_ALL_TOKENS_OUT);
     }

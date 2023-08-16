@@ -15,16 +15,6 @@ struct JoinPoolRequest {
     bool fromInternalBalance;
 }
 
-struct JoinPoolUserData {
-    uint256 kind;
-    uint256[] amountsIn;
-}
-
-struct ExitPoolUserData {
-    uint256 kind;
-    uint256 balance;
-}
-
 interface IVault {
     function exitPool(bytes32 poolId, address sender, address recipient, ExitPoolRequest calldata request) external;
 

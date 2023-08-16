@@ -28,6 +28,7 @@ interface IPoolInfo {
     }
 
     function INIT() external pure returns (uint256);
+    function EXACT_TOKENS_IN_FOR_BPT_OUT() external pure returns (uint256);
 
     function EXACT_BPT_IN_FOR_ALL_TOKENS_OUT() external pure returns (uint256);
 
