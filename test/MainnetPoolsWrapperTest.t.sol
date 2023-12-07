@@ -23,14 +23,16 @@ abstract contract OnlyExitTest is MainnetPoolsWrapperLibTest {
 }
 
 contract MainnetPoolsWrapperLibTest_AuraBal is OnlyExitTest {
-    function _setUpWrapper() internal override returns (IPoolInfo poolInfo) {
+    function _setUpWrapper() internal override returns (IPoolInfo) {
         poolInfo = new AuraBalInfo();
+        return poolInfo;
     }
 }
 
 contract MainnetPoolsWrapperLibTest_ThreeCrypto is OnlyExitTest {
-    function _setUpWrapper() internal override returns (IPoolInfo poolInfo) {
+    function _setUpWrapper() internal override returns (IPoolInfo) {
         poolInfo = new ThreeCryptoInfo();
+        return poolInfo;
     }
 }
 
@@ -70,7 +72,8 @@ contract MainnetPoolsWrapperLibTest_New2Token is OnlyInitTest {
     address factoryAddress = 0xfADa0f4547AB2de89D1304A668C39B3E09Aa7c76;
     IComposableStablePoolFactory factory = IComposableStablePoolFactory(factoryAddress);
 
-    function _setUpWrapper() internal override returns (IPoolInfo poolInfo) {
+    function _setUpWrapper() internal override returns (IPoolInfo) {
         poolInfo = new New2TokenInfo(factory);
+        return poolInfo;
     }
 }
