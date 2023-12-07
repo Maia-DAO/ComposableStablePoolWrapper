@@ -1,18 +1,5 @@
-// SPDX-License-Identifier: GPL-3.0-or-later
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-
-// You should have received a copy of the GNU General Public License
-// along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
-pragma solidity >=0.7.0 <0.9.0;
+// SPDX-License-Identifier: MIT
+pragma solidity >=0.8.0;
 
 interface IAsset {
 // solhint-disable-previous-line no-empty-blocks
@@ -37,5 +24,30 @@ interface IVault {
         WITHDRAW_INTERNAL,
         TRANSFER_INTERNAL,
         TRANSFER_EXTERNAL
+    }
+
+    /**
+     * @dev Returns a Pool's contract address and specialization setting.
+     */
+    function getPool(bytes32 poolId) external view returns (address, PoolSpecialization);
+
+    // There are three specialization settings for Pools, which allow for cheaper swaps at the cost of reduced
+    // functionality:
+    //
+    //  - General: no specialization, suited for all Pools. IGeneralPool is used for swap request callbacks, passing the
+    // balance of all tokens in the Pool. These Pools have the largest swap costs (because of the extra storage reads),
+    // which increases with the number of registered tokens.
+    //
+    //  - Minimal Swap Info: IMinimalSwapInfoPool is used instead of IGeneralPool, which saves gas by only passing the
+    // balance of the two tokens involved in the swap. This is suitable for some pricing algorithms, like the weighted
+    // constant product one popularized by Balancer V1. Swap costs are smaller compared to general Pools, and are
+    // independent of the number of registered tokens.
+    //
+    //  - Two Token: only allows two tokens to be registered. This achieves the lowest possible swap gas cost. Like
+    // minimal swap info Pools, these are called via IMinimalSwapInfoPool.
+    enum PoolSpecialization {
+        GENERAL,
+        MINIMAL_SWAP_INFO,
+        TWO_TOKEN
     }
 }
