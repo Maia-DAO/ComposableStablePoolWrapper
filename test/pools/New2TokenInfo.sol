@@ -8,7 +8,7 @@ import "../interfaces/IPoolInfo.sol";
 contract New2TokenInfo is IPoolInfo {
     MockERC20[] public override tokens;
 
-    ComposableStablePoolWrapper public immutable override stablePoolWrapper;
+    ComposableStablePoolWrapper public override stablePoolWrapper;
 
     // Balancer auraBAL Stable Pool (B-auraBAL-STABLE)
     bytes32 public immutable override poolId;
@@ -34,6 +34,8 @@ contract New2TokenInfo is IPoolInfo {
     // gauge address, has a lot of BPT
     address public immutable override whale;
 
+    ERC20 public asset;
+
     constructor(IComposableStablePoolFactory factory) {
         whale = msg.sender;
 
@@ -54,7 +56,8 @@ contract New2TokenInfo is IPoolInfo {
 
         address[] memory rateProviders = new address[](2);
         uint256[] memory tokenRateCacheDurations = new uint256[](2);
-        bool[] memory exemptFromYieldProtocolFeeFlags = new bool[](2);
+        // tokenRateCacheDurations[0] = 21600;
+        // tokenRateCacheDurations[1] = 21600;
 
         bptAddress = factory.create(
             "Mock Token Vault",
@@ -63,7 +66,7 @@ contract New2TokenInfo is IPoolInfo {
             5_000,
             rateProviders,
             tokenRateCacheDurations,
-            exemptFromYieldProtocolFeeFlags,
+            false,
             1e12,
             address(this),
             keccak256(abi.encodePacked(block.timestamp))
@@ -72,7 +75,11 @@ contract New2TokenInfo is IPoolInfo {
         bpt = IComposableStablePool(bptAddress);
         poolId = bpt.getPoolId();
 
-        stablePoolWrapper = new ComposableStablePoolWrapper(bptToken, "Mock Token Vault", "vwTKN");
+        asset = bptToken;
+    }
+
+    function create() public {
+        stablePoolWrapper = new ComposableStablePoolWrapper();
     }
 
     function getTokens() public view override returns (MockERC20[] memory) {

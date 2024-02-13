@@ -8,6 +8,8 @@ import {ComposableStablePoolWrapper} from "src/ComposableStablePoolWrapper.sol";
 import {IComposableStablePool} from "../interfaces/IComposableStablePool.sol";
 
 interface IPoolInfo {
+    function create() external;
+
     function getTokens() external view returns (MockERC20[] memory);
 
     function tokens(uint256) external view returns (MockERC20);

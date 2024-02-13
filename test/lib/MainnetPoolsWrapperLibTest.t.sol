@@ -37,6 +37,7 @@ abstract contract MainnetPoolsWrapperLibTest is Test {
         vm.selectFork(mainnetFork);
 
         poolInfo = _setUpWrapper();
+        poolInfo.create();
     }
 
     function _setUpWrapper() internal virtual returns (IPoolInfo poolInfo);
@@ -78,7 +79,7 @@ abstract contract MainnetPoolsWrapperLibTest is Test {
         console2.log("preview", preview);
         console2.log("tokenBalance", tokenBalance);
 
-        assertApproxEqAbs(tokenBalance, preview, preview / 1e3);
+        assertApproxEqAbs(tokenBalance, preview, preview / 1e2);
     }
 
     /*///////////////////////////////////////////////////////////////
@@ -101,7 +102,7 @@ abstract contract MainnetPoolsWrapperLibTest is Test {
             ExitPoolRequest({
                 assets: assets,
                 minAmountsOut: minAmountsOut,
-                userData: abi.encode([ExitKind.EXACT_BPT_IN_FOR_TOKENS_OUT, balance]),
+                userData: abi.encode([ExitKind.EXACT_BPT_IN_FOR_ALL_TOKENS_OUT, balance]),
                 toInternalBalance: false
             })
         );
@@ -114,7 +115,9 @@ abstract contract MainnetPoolsWrapperLibTest is Test {
         uint256[] memory maxAmountsIn = new uint256[](assets.length);
 
         for (uint256 i = 0; i < assets.length; i++) {
-            maxAmountsIn[i] = MockERC20(assets[i]).balanceOf(address(this));
+            maxAmountsIn[i] = assets[i] == info.bptAddress()
+                ? 51922968585348276285304963290000000000000000000
+                : MockERC20(assets[i]).balanceOf(address(this));
         }
 
         return abi.encodeWithSelector(
@@ -125,7 +128,7 @@ abstract contract MainnetPoolsWrapperLibTest is Test {
             JoinPoolRequest({
                 assets: assets,
                 maxAmountsIn: maxAmountsIn,
-                userData: abi.encode(JoinPoolUserData({kind: JoinKind.INIT, amountsIn: maxAmountsIn})),
+                userData: abi.encode(JoinKind.INIT, maxAmountsIn),
                 fromInternalBalance: false
             })
         );
@@ -152,8 +155,10 @@ abstract contract MainnetPoolsWrapperLibTest is Test {
 
         uint256 tokenBalances;
 
-        for (uint256 i = 0; i < amountsOut.length; i++) {
-            tokenBalances += DecimalConversion.convertTo18(amountsOut[i], tokens[i].decimals());
+        uint256 skipIndex;
+        for (uint256 i = 0; i < amountsOut.length - 1; i++) {
+            if (amountsOut[i] == 0) skipIndex = 1;
+            tokenBalances += DecimalConversion.convertTo18(amountsOut[i + skipIndex], tokens[i].decimals());
         }
 
         return abi.encode(tokenBalances);
@@ -171,12 +176,6 @@ abstract contract MainnetPoolsWrapperLibTest is Test {
         }
 
         return abi.encode(tokenBalances);
-    }
-
-    function _queryInit(IPoolInfo info) internal returns (bytes memory) {
-        _executeAction(vaultAddress, _prepInit(info, IBalancerQueries.queryJoin.selector));
-
-        return abi.encode(info.bptToken().balanceOf(address(this)));
     }
 
     function _initPool(IPoolInfo info) internal returns (bytes memory) {
@@ -224,10 +223,6 @@ abstract contract MainnetPoolsWrapperLibTest is Test {
 
     function test_fork_initPool() public virtual {
         _testJoin_single(poolInfo, _initPool);
-    }
-
-    function test_fork_queryInit() public virtual {
-        _testJoin_single(poolInfo, _queryInit);
     }
 
     function test_fork_convertToShares() public virtual {

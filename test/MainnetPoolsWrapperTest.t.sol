@@ -16,10 +16,6 @@ abstract contract OnlyExitTest is MainnetPoolsWrapperLibTest {
     function test_fork_initPool() public pure override {
         console2.log("this will always pass");
     }
-
-    function test_fork_queryInit() public pure override {
-        console2.log("this will always pass");
-    }
 }
 
 contract MainnetPoolsWrapperLibTest_AuraBal is OnlyExitTest {
@@ -36,18 +32,18 @@ contract MainnetPoolsWrapperLibTest_ThreeCrypto is OnlyExitTest {
     }
 }
 
-abstract contract OnlyInitTest is MainnetPoolsWrapperLibTest {
-    function test_fork_exitPool() public pure override {
-        console2.log("this will always pass");
-    }
-
-    function test_fork_queryExit() public pure override {
-        console2.log("this will always pass");
-    }
-
+abstract contract NeedsInitTest is MainnetPoolsWrapperLibTest {
     function initThenTest(function() test) internal {
         test_fork_initPool();
         test();
+    }
+
+    function test_fork_exitPool() public override {
+        initThenTest(super.test_fork_exitPool);
+    }
+
+    function test_fork_queryExit() public override {
+        initThenTest(super.test_fork_queryExit);
     }
 
     function test_fork_convertToShares() public override {
@@ -67,9 +63,9 @@ abstract contract OnlyInitTest is MainnetPoolsWrapperLibTest {
     }
 }
 
-contract MainnetPoolsWrapperLibTest_New2Token is OnlyInitTest {
+contract MainnetPoolsWrapperLibTest_New2Token is NeedsInitTest {
     // ComposableStablePoolFactory
-    address factoryAddress = 0xfADa0f4547AB2de89D1304A668C39B3E09Aa7c76;
+    address factoryAddress = 0xDB8d758BCb971e482B2C45f7F8a7740283A1bd3A;
     IComposableStablePoolFactory factory = IComposableStablePoolFactory(factoryAddress);
 
     function _setUpWrapper() internal override returns (IPoolInfo) {

@@ -3,14 +3,15 @@ pragma solidity >=0.8.0;
 
 library ExitKind {
     uint256 constant EXACT_BPT_IN_FOR_ONE_TOKEN_OUT = 0;
-    uint256 constant EXACT_BPT_IN_FOR_TOKENS_OUT = 1;
-    uint256 constant BPT_IN_FOR_EXACT_TOKENS_OUT = 2;
+    uint256 constant BPT_IN_FOR_EXACT_TOKENS_OUT = 1;
+    uint256 constant EXACT_BPT_IN_FOR_ALL_TOKENS_OUT = 2;
 }
 
 library JoinKind {
     uint256 constant INIT = 0;
     uint256 constant EXACT_TOKENS_IN_FOR_BPT_OUT = 1;
     uint256 constant TOKEN_IN_FOR_EXACT_BPT_OUT = 2;
+    uint256 constant ALL_TOKENS_IN_FOR_EXACT_BPT_OUT = 3;
 }
 
 struct ExitPoolRequest {

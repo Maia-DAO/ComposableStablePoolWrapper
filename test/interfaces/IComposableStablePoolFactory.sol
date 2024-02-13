@@ -12,7 +12,7 @@ interface IComposableStablePoolFactory {
         uint256 amplificationParameter,
         address[] memory rateProviders,
         uint256[] memory tokenRateCacheDurations,
-        bool[] memory exemptFromYieldProtocolFeeFlags,
+        bool exemptFromYieldProtocolFeeFlag,
         uint256 swapFeePercentage,
         address owner,
         bytes32 salt

@@ -6,7 +6,7 @@ import "../interfaces/IPoolInfo.sol";
 contract AuraBalInfo is IPoolInfo {
     MockERC20[] public override tokens;
 
-    ComposableStablePoolWrapper public immutable override stablePoolWrapper;
+    ComposableStablePoolWrapper public override stablePoolWrapper;
 
     // Balancer auraBAL Stable Pool (B-auraBAL-STABLE)
     bytes32 public constant override poolId = 0x3dd0843a028c86e0b760b1a76929d1c5ef93a2dd000200000000000000000249;
@@ -32,11 +32,17 @@ contract AuraBalInfo is IPoolInfo {
     // gauge address, has a lot of BPT
     address public constant override whale = 0x0312AA8D0BA4a1969Fddb382235870bF55f7f242;
 
+    ERC20 public asset;
+
     constructor() {
         tokens.push(token0);
         tokens.push(token1);
 
-        stablePoolWrapper = new ComposableStablePoolWrapper(bptToken, "Mock Token Vault", "vwTKN");
+        asset = bptToken;
+    }
+
+    function create() public {
+        stablePoolWrapper = new ComposableStablePoolWrapper();
     }
 
     function getTokens() public view override returns (MockERC20[] memory) {
