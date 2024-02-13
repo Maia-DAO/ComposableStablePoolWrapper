@@ -11,9 +11,13 @@ import {IComposableStablePool} from "./interfaces/IComposableStablePool.sol";
 
 import {VaultReentrancyLib} from "./lib/VaultReentrancyLib.sol";
 
-/// @title Ulysses Pool - Single Sided Stableswap LP
+import {ComposableStablePoolWrapperFactory} from "./factories/ComposableStablePoolWrapperFactory.sol";
+
+/// @title Wrapper for Balancer's Compostable Stable Pools.
+/// @notice This contract keeps fees by keeping excess supply gotten from invariant increases (due to fees).
+///         Keeping the ratio of LP to invariant (and asset amounts when the liquidity balance is the same) constant.
 /// @author Maia DAO (https://github.com/Maia-DAO)
-contract ComposableStablePoolWrapper is ERC4626 {
+contract PoolWrapper is ERC4626 {
     using FixedPointMathLib for uint256;
     using SafeTransferLib for address;
     using VaultReentrancyLib for address;
@@ -29,11 +33,11 @@ contract ComposableStablePoolWrapper is ERC4626 {
     address public immutable factory;
 
     /**
-     * @param _asset the underlying asset
-     * @param _name the name of the LP
-     * @param _symbol the symbol of the LP
+     * @param _asset the underlying asset of this wrapper, which is the BPT/LP token of the pool.
      */
-    constructor(ERC20 _asset, string memory _name, string memory _symbol) ERC4626(_asset, _name, _symbol) {
+    constructor(ERC20 _asset)
+        ERC4626(_asset, string.concat("Wrapped ", _asset.name()), string.concat("W", _asset.symbol()))
+    {
         factory = msg.sender;
         vault = IComposableStablePool(address(asset)).getVault();
     }
@@ -115,4 +119,8 @@ contract ComposableStablePoolWrapper is ERC4626 {
 
     /// @notice Throws if called by any account other than the factory.
     error Unauthorized();
+}
+
+contract ComposableStablePoolWrapper is PoolWrapper {
+    constructor() PoolWrapper(ComposableStablePoolWrapperFactory(msg.sender).asset()) {}
 }

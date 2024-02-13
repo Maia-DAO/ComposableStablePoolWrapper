@@ -82,6 +82,9 @@ contract ComposableStablePoolWrapperFactory is Ownable {
                               CREATE LOGIC
     ///////////////////////////////////////////////////////////////*/
 
+    // The pool of the last created ComposableStablePoolWrapper.
+    ERC20 public asset;
+
     /**
      * @notice Creates a new ComposableStablePoolWrapper contract.
      * @dev This creation can work for any balancer pool, but should only be used for stable pools. We do not check for
@@ -93,11 +96,10 @@ contract ComposableStablePoolWrapperFactory is Ownable {
         // This will revert if the poolId is not valid.
         (address poolAddress,) = vault.getPool(_poolId);
 
-        ERC20 asset = ERC20(poolAddress);
+        asset = ERC20(poolAddress);
 
-        ComposableStablePoolWrapper composableStablePoolWrapper = new ComposableStablePoolWrapper{
-            salt: bytes32(bytes20(address(asset)))
-        }(asset, string.concat("Wrapped ", asset.name()), string.concat("W", asset.symbol()));
+        ComposableStablePoolWrapper composableStablePoolWrapper =
+            new ComposableStablePoolWrapper{salt: bytes32(bytes20(address(asset)))}();
 
         composableStablePoolWrappersIds[composableStablePoolWrapper] = composableStablePoolWrappers.length;
         composableStablePoolWrappers.push(composableStablePoolWrapper);
