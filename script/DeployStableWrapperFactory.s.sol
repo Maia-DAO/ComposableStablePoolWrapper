@@ -18,8 +18,7 @@ abstract contract DeployStableWrapperFactory is Script {
     function setUp() public virtual;
 
     function run() external returns (ComposableStablePoolWrapperFactory factory) {
-        uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
-        vm.startBroadcast(deployerPrivateKey);
+        vm.startBroadcast();
 
         logParams();
 

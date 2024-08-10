@@ -56,9 +56,6 @@ contract New2TokenInfo is IPoolInfo {
 
         address[] memory rateProviders = new address[](2);
         uint256[] memory tokenRateCacheDurations = new uint256[](2);
-        // tokenRateCacheDurations[0] = 21600;
-        // tokenRateCacheDurations[1] = 21600;
-
         bptAddress = factory.create(
             "Mock Token Vault",
             "vwTKN",
