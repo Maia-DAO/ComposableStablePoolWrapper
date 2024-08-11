@@ -72,7 +72,7 @@ abstract contract MainnetPoolsWrapperLibTest is Test {
                                 ASSERTS
     ///////////////////////////////////////////////////////////////*/
 
-    function _assertTwoBalances(IPoolInfo, bytes memory prepAssertData, bytes memory actionData) internal {
+    function _assertTwoBalances(IPoolInfo, bytes memory prepAssertData, bytes memory actionData) internal pure {
         uint256 preview = abi.decode(prepAssertData, (uint256));
         uint256 tokenBalance = abi.decode(actionData, (uint256));
 
